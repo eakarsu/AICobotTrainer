@@ -1,0 +1,97 @@
+{
+  "project": "AICobotTrainer",
+  "marker": "// === Batch 01 Gaps & Frontend Mounts ===",
+  "features": [
+    {
+      "slug": "agentic-cobot-trainer-that-converts-natural-langua",
+      "component": "AgenticCobotTrainerThatConvertsNaturalLanguaPage",
+      "label": "Agentic cobot trainer that converts natural-language tasks into validated motion plans",
+      "endpoint": "/api/cf-agentic-cobot-trainer-that-converts-natural-langua",
+      "kind": "cfs"
+    },
+    {
+      "slug": "rag-over-robot-sdk-docs-and-safety-standards-iso-1",
+      "component": "RagOverRobotSdkDocsAndSafetyStandardsIso1Page",
+      "label": "RAG over robot SDK docs and safety standards (ISO 10218, ISO/TS 15066)",
+      "endpoint": "/api/cf-rag-over-robot-sdk-docs-and-safety-standards-iso-1",
+      "kind": "cfs"
+    },
+    {
+      "slug": "real-time-anomaly-detection-on-torque-encoder-stre",
+      "component": "RealTimeAnomalyDetectionOnTorqueEncoderStrePage",
+      "label": "Real-time anomaly detection on torque/encoder streams with auto-pause and human notification",
+      "endpoint": "/api/cf-real-time-anomaly-detection-on-torque-encoder-stre",
+      "kind": "cfs"
+    },
+    {
+      "slug": "white-label-sdk-for-system-integrators-deploying-t",
+      "component": "WhiteLabelSdkForSystemIntegratorsDeployingTPage",
+      "label": "White-label SDK for system integrators deploying to multiple end customers",
+      "endpoint": "/api/cf-white-label-sdk-for-system-integrators-deploying-t",
+      "kind": "cfs"
+    },
+    {
+      "slug": "eight-ai-route-files-but-0-mounted-chat-style-ai-e",
+      "component": "EightAiRouteFilesBut0MountedChatStyleAiEPage",
+      "label": "Eight ai* route files but 0 mounted /chat-style AI endpoints \u2014 feature parity gap",
+      "endpoint": "/api/gap-eight-ai-route-files-but-0-mounted-chat-style-ai-e",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-vision-based-pick-place-training-from-human-",
+      "component": "NoAiVisionBasedPickPlaceTrainingFromHumanPage",
+      "label": "No AI vision-based pick/place training from human demos",
+      "endpoint": "/api/gap-no-ai-vision-based-pick-place-training-from-human-",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-safety-violation-classification-from-operato",
+      "component": "NoAiSafetyViolationClassificationFromOperatoPage",
+      "label": "No AI safety-violation classification from operator-cobot interactions",
+      "endpoint": "/api/gap-no-ai-safety-violation-classification-from-operato",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-digital-twin-simulation-for-offline-programm",
+      "component": "NoAiDigitalTwinSimulationForOfflineProgrammPage",
+      "label": "No AI digital-twin simulation for offline programming",
+      "endpoint": "/api/gap-no-ai-digital-twin-simulation-for-offline-programm",
+      "kind": "gap"
+    },
+    {
+      "slug": "only-6-frontend-pages-vs-20-backend-routes-severe-",
+      "component": "Only6FrontendPagesVs20BackendRoutesSeverePage",
+      "label": "Only 6 frontend pages vs. 20 backend routes \u2014 severe UI gap",
+      "endpoint": "/api/gap-only-6-frontend-pages-vs-20-backend-routes-severe-",
+      "kind": "gap"
+    },
+    {
+      "slug": "notification-routes-exist-but-no-email-sms-deliver",
+      "component": "NotificationRoutesExistButNoEmailSmsDeliverPage",
+      "label": "Notification routes exist but no email/SMS delivery channel",
+      "endpoint": "/api/gap-notification-routes-exist-but-no-email-sms-deliver",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-direct-opc-ua-mqtt-industrial-protocol-bridge",
+      "component": "NoDirectOpcUaMqttIndustrialProtocolBridgePage",
+      "label": "No direct OPC-UA / MQTT industrial-protocol bridge",
+      "endpoint": "/api/gap-no-direct-opc-ua-mqtt-industrial-protocol-bridge",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-teach-pendant-or-graphical-motion-editor-in-fro",
+      "component": "NoTeachPendantOrGraphicalMotionEditorInFroPage",
+      "label": "No teach-pendant or graphical motion editor in frontend",
+      "endpoint": "/api/gap-no-teach-pendant-or-graphical-motion-editor-in-fro",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-simulator-vr-view-for-path-validation",
+      "component": "NoSimulatorVrViewForPathValidationPage",
+      "label": "No simulator/VR view for path validation",
+      "endpoint": "/api/gap-no-simulator-vr-view-for-path-validation",
+      "kind": "gap"
+    }
+  ]
+}

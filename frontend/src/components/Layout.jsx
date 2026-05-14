@@ -54,6 +54,29 @@ export default function Layout() {
               <span style={styles.aiBadge}>AI</span>
             </Link>
           ))}
+          <Link
+            to={`/ai-advanced`}
+            style={{
+              ...styles.navItem,
+              ...(location.pathname === '/ai-advanced' ? styles.navItemActive : {}),
+            }}
+          >
+            <span style={styles.navIcon}>{'\u2728'}</span>
+            <span>AI Advanced</span>
+            <span style={styles.aiBadge}>NEW</span>
+          </Link>
+        </div>
+
+        <div style={styles.sidebarSection}>
+          <div style={styles.sectionLabel}>SYSTEM</div>
+          <Link to="/notifications" style={{ ...styles.navItem, ...(location.pathname === '/notifications' ? styles.navItemActive : {}) }}>
+            <span style={styles.navIcon}>\ud83d\udd14</span>
+            <span>Notifications</span>
+          </Link>
+          <Link to="/webhooks" style={{ ...styles.navItem, ...(location.pathname === '/webhooks' ? styles.navItemActive : {}) }}>
+            <span style={styles.navIcon}>\ud83e\ude9d</span>
+            <span>Webhooks</span>
+          </Link>
         </div>
 
         <div style={styles.userSection}>

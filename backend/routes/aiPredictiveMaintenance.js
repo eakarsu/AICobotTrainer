@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const aiRateLimiter = require('../middleware/rateLimiter');
 const { callOpenRouter } = require('../utils/openrouter');
 
 router.get('/', auth, async (req, res) => {
@@ -103,6 +104,35 @@ router.post('/generate-new', auth, async (req, res) => {
     res.status(201).json({ item: result.rows[0], ai_response: parsed });
   } catch (err) {
     res.status(500).json({ error: 'AI generation failed: ' + err.message });
+  }
+});
+
+// POST /api/ai-predictive-maintenance/ai-forecast
+// Takes {equipment_history[], current_readings} → failure probability, maintenance window, parts needed
+router.post('/ai-forecast', auth, aiRateLimiter, async (req, res) => {
+  try {
+    const { equipment_history, current_readings } = req.body;
+
+    if (!Array.isArray(equipment_history) || equipment_history.length === 0) {
+      return res.status(400).json({ error: 'equipment_history (non-empty array) is required.' });
+    }
+    if (equipment_history.length > 5000) {
+      return res.status(400).json({ error: 'equipment_history must not exceed 5000 entries.' });
+    }
+    if (!current_readings || typeof current_readings !== 'object') {
+      return res.status(400).json({ error: 'current_readings (object) is required.' });
+    }
+
+    const systemPrompt = 'You are an expert robotics engineer and cobot programming specialist with deep knowledge of collaborative robot safety standards (ISO 10218, TS 15066), motion planning, and industrial automation. Respond with valid JSON only, no markdown.';
+    const userPrompt = `Forecast maintenance needs based on equipment history and current readings.\n\nEquipment History (${equipment_history.length} records, showing most recent 50): ${JSON.stringify(equipment_history.slice(-50), null, 2)}\n\nCurrent Readings: ${JSON.stringify(current_readings, null, 2)}\n\nReturn JSON: { "failure_probability": { "next_24h": number 0-1, "next_7_days": number 0-1, "next_30_days": number 0-1, "next_90_days": number 0-1 }, "predicted_failure_modes": [{ "mode": "string", "probability": number 0-1, "estimated_time_to_failure_hours": number, "failure_impact": "catastrophic/critical/major/minor" }], "maintenance_window": { "recommended_start": "YYYY-MM-DD", "recommended_end": "YYYY-MM-DD", "urgency": "immediate/this_week/this_month/routine", "estimated_duration_hours": number, "can_defer": boolean, "max_defer_days": number | null }, "parts_needed": [{ "part_name": "string", "part_number": "string", "quantity": number, "priority": "critical/high/medium/low", "lead_time_days": number, "estimated_cost_usd": number }], "maintenance_actions": [{ "action": "string", "type": "inspection/lubrication/replacement/calibration/overhaul", "estimated_time_minutes": number }], "current_health_score": number 0-100, "rul_hours": number, "cost_of_delay_per_day_usd": number, "total_estimated_cost_usd": number, "forecast_summary": "string", "confidence": number 0-1 }`;
+
+    const aiResponse = await callOpenRouter(systemPrompt, userPrompt);
+    let parsed;
+    try { parsed = JSON.parse(aiResponse); } catch { parsed = { raw_response: aiResponse }; }
+
+    res.json({ ai_forecast: parsed, history_records_analyzed: equipment_history.length });
+  } catch (err) {
+    res.status(500).json({ error: 'AI maintenance forecast failed: ' + err.message });
   }
 });
 

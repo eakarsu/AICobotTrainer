@@ -2,15 +2,36 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const aiRateLimiter = require('../middleware/rateLimiter');
 const { callOpenRouter } = require('../utils/openrouter');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const { search } = req.query;
-    const result = search
-      ? await db.query('SELECT * FROM ai_quality_analysis WHERE name ILIKE $1 ORDER BY created_at DESC', [`%${search}%`])
-      : await db.query('SELECT * FROM ai_quality_analysis ORDER BY created_at DESC');
-    res.json(result.rows);
+    const { search, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * pageSize;
+
+    let countResult, result;
+    if (search) {
+      countResult = await db.query('SELECT COUNT(*) FROM ai_quality_analysis WHERE name ILIKE $1', [`%${search}%`]);
+      result = await db.query(
+        'SELECT * FROM ai_quality_analysis WHERE name ILIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+        [`%${search}%`, pageSize, offset]
+      );
+    } else {
+      countResult = await db.query('SELECT COUNT(*) FROM ai_quality_analysis');
+      result = await db.query(
+        'SELECT * FROM ai_quality_analysis ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        [pageSize, offset]
+      );
+    }
+
+    const total = parseInt(countResult.rows[0].count);
+    res.json({
+      data: result.rows,
+      pagination: { page: pageNum, limit: pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch quality analyses.' });
   }
@@ -103,6 +124,35 @@ router.post('/generate-new', auth, async (req, res) => {
     res.status(201).json({ item: result.rows[0], ai_response: parsed });
   } catch (err) {
     res.status(500).json({ error: 'AI generation failed: ' + err.message });
+  }
+});
+
+// POST /api/ai-quality-analysis/ai-inspect
+// Input validation + AI defect detection, quality score, rejection criteria
+router.post('/ai-inspect', auth, aiRateLimiter, async (req, res) => {
+  try {
+    const { inspection_data, equipment_type } = req.body;
+
+    if (!inspection_data || typeof inspection_data !== 'object') {
+      return res.status(400).json({ error: 'inspection_data (object) is required.' });
+    }
+    if (!equipment_type || typeof equipment_type !== 'string') {
+      return res.status(400).json({ error: 'equipment_type (string) is required.' });
+    }
+    if (equipment_type.length > 200) {
+      return res.status(400).json({ error: 'equipment_type must be under 200 characters.' });
+    }
+
+    const systemPrompt = 'You are an expert robotics engineer and cobot programming specialist with deep knowledge of collaborative robot safety standards (ISO 10218, TS 15066), motion planning, and industrial automation. Respond with valid JSON only, no markdown.';
+    const userPrompt = `Perform an AI quality inspection for equipment type "${equipment_type}" using the following inspection data:\n${JSON.stringify(inspection_data, null, 2)}\n\nReturn JSON: { "defects_detected": [{ "type": "string", "location": "string", "severity": "critical/major/minor", "confidence": number 0-1, "description": "string" }], "quality_score": number 0-100, "overall_grade": "A/B/C/D/F", "rejection_criteria_triggered": [{ "criterion": "string", "triggered": boolean, "threshold": "string", "measured_value": "string" }], "pass_fail": "pass/fail/conditional", "root_cause_analysis": [{ "issue": "string", "probable_cause": "string", "recommended_action": "string" }], "confidence": number 0-1, "inspection_summary": "string" }`;
+
+    const aiResponse = await callOpenRouter(systemPrompt, userPrompt);
+    let parsed;
+    try { parsed = JSON.parse(aiResponse); } catch { parsed = { raw_response: aiResponse }; }
+
+    res.json({ ai_inspection: parsed, equipment_type, inspection_data });
+  } catch (err) {
+    res.status(500).json({ error: 'AI inspection failed: ' + err.message });
   }
 });
 
