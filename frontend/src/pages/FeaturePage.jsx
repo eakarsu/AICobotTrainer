@@ -21,18 +21,34 @@ export default function FeaturePage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [showAiGenerate, setShowAiGenerate] = useState(false);
 
-  const fetchItems = useCallback(async () => {
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 20 });
+
+  const fetchItems = useCallback(async (page = 1) => {
     if (!feature) return;
     try {
       setLoading(true);
-      const res = await api.get(`${feature.api}${search ? `?search=${search}` : ''}`);
-      setItems(res.data);
+      const params = new URLSearchParams();
+      params.set('page', page);
+      params.set('limit', pagination.limit || 20);
+      if (search) params.set('search', search);
+      const res = await api.get(`${feature.api}?${params.toString()}`);
+      const body = res.data;
+      // Support both legacy ([] direct) and paginated ({data, pagination}) shapes
+      if (Array.isArray(body)) {
+        setItems(body);
+        setPagination((p) => ({ ...p, page: 1, totalPages: 1, total: body.length }));
+      } else if (body && Array.isArray(body.data)) {
+        setItems(body.data);
+        setPagination(body.pagination || { page: 1, totalPages: 1, total: body.data.length, limit: 20 });
+      } else {
+        setItems([]);
+      }
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, [feature, search]);
+  }, [feature, search, pagination.limit]);
 
   useEffect(() => {
     setSelected(null);
@@ -241,6 +257,27 @@ export default function FeaturePage() {
                 ))}
               </tbody>
             </table>
+          )}
+          {pagination.totalPages > 1 && (
+            <div style={styles.paginationBar}>
+              <button
+                style={styles.paginationBtn}
+                disabled={pagination.page <= 1}
+                onClick={() => fetchItems(pagination.page - 1)}
+              >
+                Prev
+              </button>
+              <span style={styles.paginationInfo}>
+                Page {pagination.page} / {pagination.totalPages} ({pagination.total} items)
+              </span>
+              <button
+                style={styles.paginationBtn}
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchItems(pagination.page + 1)}
+              >
+                Next
+              </button>
+            </div>
           )}
         </div>
 
@@ -750,5 +787,26 @@ const styles = {
     fontSize: 15,
     fontWeight: 600,
     cursor: 'pointer',
+  },
+  paginationBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 16px',
+    borderTop: '1px solid #2e2f3e',
+    background: '#1a1b23',
+  },
+  paginationBtn: {
+    background: '#21222d',
+    color: '#a1a1aa',
+    border: '1px solid #2e2f3e',
+    borderRadius: 6,
+    padding: '6px 14px',
+    fontSize: 13,
+    cursor: 'pointer',
+  },
+  paginationInfo: {
+    color: '#71717a',
+    fontSize: 12,
   },
 };

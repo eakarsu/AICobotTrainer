@@ -6,14 +6,31 @@ const { callOpenRouter } = require('../utils/openrouter');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const { search } = req.query;
-    let result;
+    const { search, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * pageSize;
+
+    let countResult, result;
     if (search) {
-      result = await db.query('SELECT * FROM ai_motion_planning WHERE name ILIKE $1 ORDER BY created_at DESC', [`%${search}%`]);
+      countResult = await db.query('SELECT COUNT(*) FROM ai_motion_planning WHERE name ILIKE $1', [`%${search}%`]);
+      result = await db.query(
+        'SELECT * FROM ai_motion_planning WHERE name ILIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+        [`%${search}%`, pageSize, offset]
+      );
     } else {
-      result = await db.query('SELECT * FROM ai_motion_planning ORDER BY created_at DESC');
+      countResult = await db.query('SELECT COUNT(*) FROM ai_motion_planning');
+      result = await db.query(
+        'SELECT * FROM ai_motion_planning ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        [pageSize, offset]
+      );
     }
-    res.json(result.rows);
+
+    const total = parseInt(countResult.rows[0].count);
+    res.json({
+      data: result.rows,
+      pagination: { page: pageNum, limit: pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    });
   } catch (err) {
     console.error('Error fetching motion plans:', err);
     res.status(500).json({ error: 'Failed to fetch motion plans.' });

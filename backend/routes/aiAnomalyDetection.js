@@ -2,15 +2,36 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const aiRateLimiter = require('../middleware/rateLimiter');
 const { callOpenRouter } = require('../utils/openrouter');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const { search } = req.query;
-    const result = search
-      ? await db.query('SELECT * FROM ai_anomaly_detection WHERE name ILIKE $1 ORDER BY created_at DESC', [`%${search}%`])
-      : await db.query('SELECT * FROM ai_anomaly_detection ORDER BY created_at DESC');
-    res.json(result.rows);
+    const { search, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * pageSize;
+
+    let countResult, result;
+    if (search) {
+      countResult = await db.query('SELECT COUNT(*) FROM ai_anomaly_detection WHERE name ILIKE $1', [`%${search}%`]);
+      result = await db.query(
+        'SELECT * FROM ai_anomaly_detection WHERE name ILIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+        [`%${search}%`, pageSize, offset]
+      );
+    } else {
+      countResult = await db.query('SELECT COUNT(*) FROM ai_anomaly_detection');
+      result = await db.query(
+        'SELECT * FROM ai_anomaly_detection ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        [pageSize, offset]
+      );
+    }
+
+    const total = parseInt(countResult.rows[0].count);
+    res.json({
+      data: result.rows,
+      pagination: { page: pageNum, limit: pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch anomaly detections.' });
   }
@@ -103,6 +124,35 @@ router.post('/generate-new', auth, async (req, res) => {
     res.status(201).json({ item: result.rows[0], ai_response: parsed });
   } catch (err) {
     res.status(500).json({ error: 'AI generation failed: ' + err.message });
+  }
+});
+
+// POST /api/ai-anomaly-detection/ai-analyze
+// Anomaly classification, root cause hypothesis, recommended actions
+router.post('/ai-analyze', auth, aiRateLimiter, async (req, res) => {
+  try {
+    const { sensor_readings, baseline_profile } = req.body;
+
+    if (!Array.isArray(sensor_readings) || sensor_readings.length === 0) {
+      return res.status(400).json({ error: 'sensor_readings (non-empty array) is required.' });
+    }
+    if (sensor_readings.length > 10000) {
+      return res.status(400).json({ error: 'sensor_readings array must not exceed 10000 entries.' });
+    }
+    if (!baseline_profile || typeof baseline_profile !== 'object') {
+      return res.status(400).json({ error: 'baseline_profile (object) is required.' });
+    }
+
+    const systemPrompt = 'You are an expert robotics engineer and cobot programming specialist with deep knowledge of collaborative robot safety standards (ISO 10218, TS 15066), motion planning, and industrial automation. Respond with valid JSON only, no markdown.';
+    const userPrompt = `Analyze the following sensor readings for anomalies against the provided baseline profile.\n\nSensor Readings (${sensor_readings.length} entries): ${JSON.stringify(sensor_readings.slice(0, 100))}${sensor_readings.length > 100 ? ` ... (${sensor_readings.length - 100} more entries)` : ''}\n\nBaseline Profile: ${JSON.stringify(baseline_profile, null, 2)}\n\nReturn JSON: { "anomalies_detected": boolean, "anomaly_count": number, "anomaly_classifications": [{ "id": number, "type": "spike/drift/oscillation/dropout/offset/pattern_change", "affected_sensor": "string", "start_index": number, "end_index": number, "severity": "critical/high/medium/low", "deviation_from_baseline": "string", "confidence": number 0-1 }], "root_cause_hypotheses": [{ "hypothesis": "string", "probability": number 0-1, "supporting_evidence": [strings], "tests_to_confirm": [strings] }], "overall_system_health": "healthy/degraded/critical/failed", "health_score": number 0-100, "recommended_actions": [{ "priority": "immediate/urgent/routine", "action": "string", "expected_outcome": "string" }], "trending": "improving/stable/degrading/unknown", "predicted_time_to_failure_hours": number | null, "analysis_summary": "string" }`;
+
+    const aiResponse = await callOpenRouter(systemPrompt, userPrompt);
+    let parsed;
+    try { parsed = JSON.parse(aiResponse); } catch { parsed = { raw_response: aiResponse }; }
+
+    res.json({ ai_analysis: parsed, readings_count: sensor_readings.length });
+  } catch (err) {
+    res.status(500).json({ error: 'AI anomaly analysis failed: ' + err.message });
   }
 });
 

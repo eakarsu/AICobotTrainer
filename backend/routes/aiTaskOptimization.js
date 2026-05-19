@@ -6,11 +6,31 @@ const { callOpenRouter } = require('../utils/openrouter');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const { search } = req.query;
-    const result = search
-      ? await db.query('SELECT * FROM ai_task_optimization WHERE name ILIKE $1 ORDER BY created_at DESC', [`%${search}%`])
-      : await db.query('SELECT * FROM ai_task_optimization ORDER BY created_at DESC');
-    res.json(result.rows);
+    const { search, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * pageSize;
+
+    let countResult, result;
+    if (search) {
+      countResult = await db.query('SELECT COUNT(*) FROM ai_task_optimization WHERE name ILIKE $1', [`%${search}%`]);
+      result = await db.query(
+        'SELECT * FROM ai_task_optimization WHERE name ILIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+        [`%${search}%`, pageSize, offset]
+      );
+    } else {
+      countResult = await db.query('SELECT COUNT(*) FROM ai_task_optimization');
+      result = await db.query(
+        'SELECT * FROM ai_task_optimization ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        [pageSize, offset]
+      );
+    }
+
+    const total = parseInt(countResult.rows[0].count);
+    res.json({
+      data: result.rows,
+      pagination: { page: pageNum, limit: pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch task optimizations.' });
   }
