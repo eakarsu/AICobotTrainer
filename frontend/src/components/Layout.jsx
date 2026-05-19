@@ -77,6 +77,11 @@ export default function Layout() {
             <span style={styles.navIcon}>\ud83e\ude9d</span>
             <span>Webhooks</span>
           </Link>
+          <Link to="/custom-views" style={{ ...styles.navItem, ...(location.pathname === '/custom-views' ? styles.navItemActive : {}) }}>
+            <span style={styles.navIcon}>{'\ud83d\udcca'}</span>
+            <span>Trainer Views</span>
+            <span style={styles.aiBadge}>NEW</span>
+          </Link>
         </div>
 
         <div style={styles.userSection}>

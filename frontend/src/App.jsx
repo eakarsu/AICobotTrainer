@@ -6,6 +6,7 @@ import FeaturePage from './pages/FeaturePage';
 import AIAdvancedPage from './pages/AIAdvancedPage';
 import Notifications from './pages/Notifications';
 import Webhooks from './pages/Webhooks';
+import CustomViewsPage from './pages/CustomViewsPage';
 import Layout from './components/Layout';
 
 function PrivateRoute({ children }) {
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/ai-advanced" element={<AIAdvancedPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/webhooks" element={<Webhooks />} />
+          <Route path="/custom-views" element={<CustomViewsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
