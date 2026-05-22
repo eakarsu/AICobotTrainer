@@ -51,6 +51,7 @@ app.use('/api/webhooks', require('./routes/webhooks'));
 
 // Custom synthesized "Cobot Views" (timeline, heatmap, PDF, wizard)
 app.use('/api/custom-views', require('./routes/customViews'));
+app.use('/api/fixture-changeover-coach', require('./routes/fixtureChangeoverCoach'));
 
 // Health check
 app.get('/api/health', (req, res) => {
