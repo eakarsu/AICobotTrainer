@@ -1,4 +1,5 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error('JWT_SECRET must be at least 32 characters');
 
 const express = require('express');
 const cors = require('cors');
@@ -52,6 +53,7 @@ app.use('/api/webhooks', require('./routes/webhooks'));
 // Custom synthesized "Cobot Views" (timeline, heatmap, PDF, wizard)
 app.use('/api/custom-views', require('./routes/customViews'));
 app.use('/api/fixture-changeover-coach', require('./routes/fixtureChangeoverCoach'));
+app.use('/api/governed-operations', require('./routes/governedOperations'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -77,15 +79,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-
-
-// === Batch 01 Gaps & Frontend Mounts ===
-app.use('/api/gap-eight-ai-route-files-but-0-mounted-chat-style-ai-e', require('./routes/gap_eight_ai_route_files_but_0_mounted_chat_style_ai_e'));
-app.use('/api/gap-no-ai-vision-based-pick-place-training-from-human-', require('./routes/gap_no_ai_vision_based_pick_place_training_from_human_'));
-app.use('/api/gap-no-ai-safety-violation-classification-from-operato', require('./routes/gap_no_ai_safety_violation_classification_from_operato'));
-app.use('/api/gap-no-ai-digital-twin-simulation-for-offline-programm', require('./routes/gap_no_ai_digital_twin_simulation_for_offline_programm'));
-app.use('/api/gap-only-6-frontend-pages-vs-20-backend-routes-severe-', require('./routes/gap_only_6_frontend_pages_vs_20_backend_routes_severe_'));
-app.use('/api/gap-notification-routes-exist-but-no-email-sms-deliver', require('./routes/gap_notification_routes_exist_but_no_email_sms_deliver'));
-app.use('/api/gap-no-direct-opc-ua-mqtt-industrial-protocol-bridge', require('./routes/gap_no_direct_opc_ua_mqtt_industrial_protocol_bridge'));
-app.use('/api/gap-no-teach-pendant-or-graphical-motion-editor-in-fro', require('./routes/gap_no_teach_pendant_or_graphical_motion_editor_in_fro'));
-app.use('/api/gap-no-simulator-vr-view-for-path-validation', require('./routes/gap_no_simulator_vr_view_for_path_validation'));

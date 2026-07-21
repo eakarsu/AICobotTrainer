@@ -1,0 +1,1 @@
+const fs=require('fs'),path=require('path'),db=require('../db');(async()=>{try{const dir=path.join(__dirname,'..','migrations');for(const f of fs.readdirSync(dir).filter(x=>x.endsWith('.sql')).sort()){await db.query(fs.readFileSync(path.join(dir,f),'utf8'));console.log(`applied ${f}`);}}catch(e){console.error(e);process.exitCode=1;}finally{await db.pool.end();}})();

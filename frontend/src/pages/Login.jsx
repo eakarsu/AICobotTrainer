@@ -9,11 +9,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleAutoFill = () => {
-    setEmail('admin@cobottrainer.com');
-    setPassword('admin123');
-  };
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -65,9 +60,6 @@ export default function Login() {
           </div>
           <button type="submit" style={styles.loginBtn} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-          <button type="button" onClick={handleAutoFill} style={styles.autoFillBtn}>
-            Auto-Fill Demo Credentials
           </button>
         </form>
       </div>

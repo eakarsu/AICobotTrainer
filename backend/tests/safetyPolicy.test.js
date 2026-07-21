@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),crypto=require('crypto');const {canonical,verifyTelemetry,transition,requireRole}=require('../lib/safetyPolicy');
+test('canonical telemetry signatures verify',()=>{const {privateKey,publicKey}=crypto.generateKeyPairSync('ed25519');const p={sequence:1,capturedAt:'2026-01-01',values:{b:2,a:1}};const sig=crypto.sign(null,Buffer.from(canonical(p)),privateKey).toString('base64');assert.equal(verifyTelemetry(p,sig,publicKey),true);p.sequence=2;assert.equal(verifyTelemetry(p,sig,publicKey),false);});
+test('state machine blocks unsafe skips',()=>{assert.equal(transition('pending_review','acknowledged'),'acknowledged');assert.throws(()=>transition('pending_review','approved'),/Invalid transition/);});
+test('only operators can override',()=>assert.throws(()=>requireRole('viewer',['operator']),/Operator/));

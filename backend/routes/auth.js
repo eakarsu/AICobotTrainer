@@ -5,25 +5,10 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const auth = require('../middleware/auth');
 
-// Ensure users table exists
-const initUsersTable = async () => {
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password_hash VARCHAR(255) NOT NULL,
-      name VARCHAR(255) NOT NULL,
-      role VARCHAR(50) NOT NULL DEFAULT 'user',
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-};
-initUsersTable().catch(console.error);
-
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required.' });
@@ -31,8 +16,8 @@ router.post('/register', async (req, res) => {
     if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Invalid email format.' });
     }
-    if (typeof password !== 'string' || password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    if (typeof password !== 'string' || password.length < 12) {
+      return res.status(400).json({ error: 'Password must be at least 12 characters.' });
     }
 
     const existing = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
@@ -41,8 +26,7 @@ router.post('/register', async (req, res) => {
     }
 
     const password_hash = await bcrypt.hash(password, 12);
-    const allowedRoles = ['user', 'admin', 'operator'];
-    const userRole = allowedRoles.includes(role) ? role : 'user';
+    const userRole = 'user';
 
     const result = await db.query(
       'INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, created_at',
