@@ -78,4 +78,4 @@ fi
 unset demo_credentials_email demo_credentials_password demo_credentials_tenant demo_credentials_project_dir demo_credentials_line demo_credentials_key demo_credentials_value demo_credentials_first demo_credentials_last
 
 p="$(cd "$(dirname "$0")"&&pwd)";[ -f "$p/.env" ]||{ echo 'Copy .env.example to .env.' >&2;exit 1;};[ -d "$p/backend/node_modules" ]&&[ -d "$p/frontend/node_modules" ]||{ echo 'Run scripts/bootstrap.sh first.' >&2;exit 1;};set -a;. "$p/.env";set +a
-(cd "$p/backend"&&npm start)&b=$!;(cd "$p/frontend"&&npm run dev -- --port "${FRONTEND_PORT:-3000}")&f=$!;cleanup(){ kill "$b" "$f" 2>/dev/null||true;};trap cleanup INT TERM EXIT;wait "$b" "$f"
+(cd "$p/backend"&&npm start)&b=$!;(cd "$p/frontend"&&npm run dev -- --host 127.0.0.1 --port "${FRONTEND_PORT:-3000}" --strictPort)&f=$!;cleanup(){ kill "$b" "$f" 2>/dev/null||true;};trap cleanup INT TERM EXIT;wait "$b" "$f"
